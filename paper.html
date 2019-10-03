@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+
+  <body>
+    <script type="text/javascript" src="paper.js"></script>
+    <script type="text/javascript">
+      'use strict';
+      window.onload = () => {
+        var a = [
+          {
+            "x": 40,
+            "y": 70
+          },
+          {
+            "x": 40,
+            "y": 70
+          },
+          {
+            "x": 41,
+            "y": 82
+          },
+          {
+            "x": 44,
+            "y": 89
+          },
+          {
+            "x": 52,
+            "y": 88
+          },
+          {
+            "x": 54,
+            "y": 76
+          },
+          {
+            "x": 56,
+            "y": 71
+          },
+          {
+            "x": 56,
+            "y": 74
+          },
+          {
+            "x": 58,
+            "y": 84
+          },
+          {
+            "x": 64,
+            "y": 85
+          },
+          {
+            "x": 68,
+            "y": 79
+          },
+          {
+            "x": 68,
+            "y": 68
+          },
+          {
+            "x": 67,
+            "y": 68
+          }
+        ]
+
+
+        var randomRange = (r) => Math.floor(Math.random() * (r + 1)) - (r / 2);
+
+        var canvas = document.getElementById('canvas');
+        paper.setup(canvas);
+        var tool = new paper.Tool();
+        tool.activate();
+        var path;
+        paper.install(window)
+
+        let myPath = new Path();
+        myPath.strokeColor = 'black';
+        for (let i = 0; i < a.length; i++) {
+          myPath.add(a[i]);
+        }
+        myPath.simplify(10);
+
+        let pathArray = [];
+
+        for (let i = 0; i < 10; i++) {
+          let myPath2 = myPath.clone();
+          myPath2.position.y += 100;
+          myPath2.position.x += (i * 75);
+          pathArray.push(myPath2);
+        }
+
+        let myCircle = new Shape.Circle({
+          center: myPath.segments[2].point,
+          radius: 5,
+          fillColor: 'red'
+        });
+
+        let myCircle2 = new Shape.Circle({
+          center: [0, 0],
+          radius: 5,
+          fillColor: 'blue'
+        });
+
+        let i = 0;
+        setInterval(() => {
+          if (myPath.getLocationAt(i) === null) {
+            i = 0;
+          }
+          let F = myPath.curves[myPath.getLocationAt(i).index].length / 2;
+          let pos = myPath.getLocationAt(i).point;
+          myCircle.position = pos;
+          pos.x += (myPath.getTangentAt(i).x * F);
+          pos.y += (myPath.getTangentAt(i).y * F);
+          myCircle2.position = pos;
+          i++;
+        }, 30);
+
+        function randomizePath(path) {
+          let segments = path.segments;
+          let firstSegment = path.firstSegment;
+          let firstPoint = firstSegment.point;
+          let lastSegment = path.lastSegment;
+          let lastPoint = lastSegment.point;
+          let R = randomRange(20);
+          firstPoint.x += R;
+          firstPoint.y += R;
+          for (let j = 1; j < segments.length; j++) {
+            let segment = segments[j];
+            let curve = segment.curve;
+            let point = segment.point;
+            let F = (curve.length / 2) * (Math.random());
+            point.x += (curve.getTangentAt(0).x * F);
+            point.y += (curve.getTangentAt(0).y * F);
+          }
+          let Vx = lastPoint.x - segments[segments.length - 2].point.x;
+          let Vy = lastPoint.y -segments[segments.length - 2].point.y;
+          lastPoint.x += randomRange(Vx * 2);
+          lastPoint.y += randomRange(Vy * 2);
+          segments[segments.length - 2].smooth({ type: 'catmull-rom', factor: .5 });
+          lastSegment.smooth({ type: 'catmull-rom', factor: .5 });
+        }
+
+        for (let j = 0; j < pathArray.length; j++) {
+          randomizePath(pathArray[j]);
+        }
+
+        function randomLogarithmic(n) {
+          return Math.floor(Math.log((Math.random()*(Math.pow(1.3, max)-1.0))+1.0) / Math.log(1.3));
+        }
+alert('')
+        for (let i = 0; i < 999; i++) {
+          console.log(randomLogarithmic(100));
+        }
+
+      }
+    </script>
+    <canvas id="canvas" width="1366" height="720"></canvas>
+  </body>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      overflow-y: hidden;
+    }
+  </style>
+
+</html>

@@ -1,0 +1,114 @@
+<html>
+<title>Synthetic Handwriting</title>
+
+<body>
+  <canvas id='canvas' width='1366' height='720'></canvas>
+  <script>
+    const x = 0;
+    const y = 0;
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let alphabet = 'abcdefghijklmnopqrstuvwxyz';
+    let letters = {};
+    document.body.onkeypress = (e) => {
+      if (e.key == 'Enter') {
+        letters[alphabet[Object.keys(letters).length]] = elements;
+        elements = [];
+        console.log(JSON.stringify(letters, null, 2));
+      }
+    }
+
+    let mouse = { x: 0, y: 0 };
+    document.body.addEventListener('mousemove', (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    });
+
+    let mousedown = false;
+
+    document.body.onmousedown = (e) => {
+      mousedown = true;
+      let points = [];
+      elements.push(points);
+      points.push({ x: mouse.x, y: mouse.y })
+    }
+
+    document.body.onmouseup = (e) => {
+      mousedown = false;
+    }
+
+    let elements = [];
+
+    setInterval(() => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
+      ctx.rect(0, 0, 100, 100);
+      ctx.stroke();
+      for (let i = 0; i < elements.length; i++) {
+        let X = [];
+        let Y = [];
+        for (let j = 0; j < elements[i].length; j++) {
+          X.push(elements[i][j].x);
+          Y.push(elements[i][j].y);
+        }
+
+        let x1 = Math.min(...X);
+        let x2 = Math.max(...X);
+        let y1 = Math.min(...Y);
+        let y2 = Math.min(...Y);
+
+        let w = Math.abs(x1 - x2);
+        let h = Math.abs(y1 - y2);
+
+        let size = Math.sqrt(w * w + h * h);
+
+        if (size < 2) {
+          drawPoint({ x: x1, y: y1 });
+        }
+      }
+      if (mousedown) {
+        elements[elements.length - 1].push({ x: mouse.x, y: mouse.y });
+      }
+      if (elements.length) {
+        for (let i = 0; i < elements.length; i++) {
+          if (elements[i].length > 2) {
+            drawCurve(elements[i]);
+          }
+        }
+      }
+    }, 50);
+
+    function drawPoint(point) {
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 1, 0, 2 * Math.PI, true);
+      ctx.fill();
+    }
+
+    function drawCurve(points) {
+      ctx.moveTo(points[0].x, points[0].y);
+      ctx.beginPath();
+      for (i = 1; i < points.length - 2; i++) {
+        var xc = (points[i].x + points[i + 1].x) / 2;
+        var yc = (points[i].y + points[i + 1].y) / 2;
+        ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+      }
+      // curve through the last two points
+      if (points.length > 2) {
+        ctx.quadraticCurveTo(points[i].x, points[i].y, points[i + 1].x, points[i + 1].y);
+      }
+      ctx.stroke();
+    }
+
+  </script>
+</body>
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: hidden;
+  }
+</style>
+
+</html>

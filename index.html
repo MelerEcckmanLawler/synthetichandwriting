@@ -1,0 +1,30 @@
+
+
+<!DOCTYPE html>
+<html>
+  <head>
+  <body>
+      <input id='input' type='text'/>
+      <img id='img'></img>
+    <script type="text/javascript" src="jquery.js"></script>
+    <script type="text/javascript" src="socket.io.js"></script>
+    <script type="text/javascript">
+      'use strict';
+      const socket = io.connect('localhost:3000');
+
+      $('#input').keypress((e)=>{
+        if (e.key == 'Enter') {
+          socket.emit('input', $('#input').val());
+        }
+      }); 
+    </script>
+  </body>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      overflow-y: hidden;
+    }
+  </style>
+</html>

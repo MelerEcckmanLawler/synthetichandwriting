@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+
+  <body>
+    <script type="text/javascript" src="jquery.js"></script>
+    <script type="text/javascript" src="paper.js"></script>
+    <script type="text/javascript" src="glyphs.js"></script>
+    <script type="text/javascript">
+      'use strict';
+      window.onload = () => {
+        var randomRange = (r) => Math.floor(Math.random() * (r + 1)) - (r / 2);
+
+        var canvas = document.getElementById('canvas');
+        paper.setup(canvas);
+        var tool = new paper.Tool();
+        tool.activate();
+
+        paper.install(window)
+
+        function vAlign(letter) {
+          switch (letter) {
+            case 'g':
+            case 'j':
+            case 'p':
+            case 'q':
+            case 'y':
+              return 'hangs';
+              break;
+            default:
+              return 'sits';
+              break;
+          }
+        }
+
+        let text = 'this is a robbery';
+        let glyphPaths = [];
+        let textWidth = 50;
+        for (let i = 0; i < text.length; i++) {
+          if (text[i] == ' ') {
+            textWidth += 50;
+            continue;
+          }
+          let path = new Path();
+          path.strokeColor = 'blue';
+          let glyph = glyphs[text[i]][0];
+          for (let i = 0; i < glyph.length; i++) {
+            path.add(glyph[i]);
+          }
+
+          let secondStroke = null;
+          if (glyphs[text[i]].length > 1) {
+            console.log(text[i]);
+            secondStroke = new Path();
+            secondStroke.strokeColor = 'blue';
+            for (let k = 0; k < glyphs[text[i]].length; k++) {
+              secondStroke.add(glyphs[text[i]][k]);
+            }
+          }
+
+          path.simplify(5);
+
+          if (secondStroke != null) {
+            secondStroke.simplify(5);
+            randomizePath(secondStroke, text[i], true);
+          }
+
+          randomizePath(path, text[i], false);
+          let pos = path.position;
+          let width = path.bounds.width;
+          let height = path.bounds.height;
+          let left = path.bounds.x;
+          pos.x = textWidth + (width / 2);
+          switch (vAlign(text[i])) {
+            case 'sits':
+              pos.y = 450 - (height / 2);
+              break;
+            case 'hangs':
+              pos.y = 420 + (height / 2);
+              break;
+          }
+          glyphPaths.push(path);
+
+          if (secondStroke != null) {
+            secondStroke.position.x = path.position.x;
+            secondStroke.position.y = path.position.y;
+          }
+
+          textWidth += width;
+          //let BB = new Path.Rectangle(path.bounds);
+          //BB.strokeColor = 'red';
+        }
+
+        let myPath = new Path();
+        myPath.strokeColor = 'black';
+        for (let i = 0; i < glyphs['a'][0].length; i++) {
+          myPath.add(glyphs['a'][0][i]);
+        }
+        myPath.simplify(10);
+
+        let pathArray = [];
+
+        for (let i = 0; i < 10; i++) {
+          let myPath2 = myPath.clone();
+          myPath2.position.y += 100;
+          myPath2.position.x += (i * 75);
+          pathArray.push(myPath2);
+        }
+
+        let myCircle = new Shape.Circle({
+          center: myPath.segments[2].point,
+          radius: 5,
+          fillColor: 'red'
+        });
+
+        let myCircle2 = new Shape.Circle({
+          center: [0, 0],
+          radius: 5,
+          fillColor: 'blue'
+        });
+
+        let i = 0;
+        setInterval(() => {
+          if (myPath.getLocationAt(i) === null) {
+            i = 0;
+          }
+          let F = myPath.curves[myPath.getLocationAt(i).index].length / 2;
+          let pos = myPath.getLocationAt(i).point;
+          myCircle.position = pos;
+          pos.x += (myPath.getTangentAt(i).x * F);
+          pos.y += (myPath.getTangentAt(i).y * F);
+          myCircle2.position = pos;
+          i++;
+        }, 30);
+
+        function randomizePath(path, glyph, isLigature) {
+          let scale = 0.9 + (Math.random() * .1);
+          path.scale(scale);
+          let segments = path.segments;
+          let firstSegment = path.firstSegment;
+          let firstPoint = firstSegment.point;
+          let lastSegment = path.lastSegment;
+          let lastPoint = lastSegment.point;
+          let R = randomRange(20);
+          firstPoint.x += R;
+          firstPoint.y += R;
+          for (let j = 1; j < segments.length; j++) {
+            let segment = segments[j];
+            let curve = segment.curve;
+            let point = segment.point; 
+ 
+            let F = (curve.length / 4) * (Math.random());
+            if (isLigature) { 
+              F /= 5;
+            }
+            let tangent = curve.getTangentAt(0);
+            let normal = curve.getNormalAt(0);
+            console.log(normal);
+            point.x += (tangent.x * F);
+            point.y += (tangent.y * F);
+          }
+          if (!(glyph == 'o' || glyph == 'c' || glyph == 'r' || glyph == 'n' )) {
+            let Vx = lastPoint.x - segments[segments.length - 2].point.x;
+            let Vy = lastPoint.y - segments[segments.length - 2].point.y;
+            if (glyph == 't' || glyph == 'f' || glyph == 'b' || glyph == 'd' || glyph == 'l' || glyph == 'h') {
+              lastPoint.x += Math.random(Vx * 4);
+              lastPoint.y += Math.random(Vy * 4);
+            } else {
+              lastPoint.x += randomRange(Vx * 2);
+              lastPoint.y += randomRange(Vy * 2);
+            }
+            //segments[segments.length - 2].smooth({ type: 'catmull-rom', factor: .5 });
+            //lastSegment.smooth({ type: 'catmull-rom', factor: .5 });
+          }
+        }
+
+        for (let j = 0; j < pathArray.length; j++) {
+          randomizePath(pathArray[j]);
+        }
+
+        function randomLogarithmic(n) {
+          return Math.floor(Math.log((Math.random() * (Math.pow(1.3, n) - 1.0)) + 1.0) / Math.log(1.3));
+        }
+
+      }
+    </script>
+    <canvas id="canvas" width="1366" height="720"></canvas>
+  </body>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      overflow-y: hidden;
+    }
+  </style>
+
+</html>
