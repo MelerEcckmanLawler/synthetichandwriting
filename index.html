@@ -4,6 +4,7 @@
   <head>
     <title>My Dog Did My Homework: Handwriting Synthesizer</title>
   </head>
+
   <body>
     <canvas id="canvas" width="1366" height="200"></canvas>
     <script type="text/javascript" src="jquery.js"></script>
@@ -13,136 +14,148 @@
     <script type="text/javascript" src="paper.js"></script>
     <link rel="stylesheet" href="bootstrap.css">
 
-    <div class="input-group mb-3">
-        <div class="input-group-prepend">
-          <span class="input-group-text" id="basic-addon1">Text:</span>
-        </div>
-        <input id='input' type="text" class="form-control" placeholder="Draw the letters you need in the boxes above, type here, then press Enter!" aria-label="Username" aria-describedby="basic-addon1">
+    <div id='container' class="input-group mb-3">
+      <div class="input-group-prepend">
+        <span class="input-group-text" id="basic-addon1">Text:</span>
       </div>
+      <input id='input' type="text" class="form-control"
+        placeholder="Draw the letters you need in the boxes above, type here, then press Enter!" aria-label="Username"
+        aria-describedby="basic-addon1">
+    </div>
 
-      <img id='img'/>
-      <div id='svg'></div>
-  
+    <img id='img' />
+    <div id='svg'></div>
+
     <script type="text/javascript">
       'use strict';
+      const socket = io.connect('https://mydogdidmyhomework.herokuapp.com');
       function b64(e) { var t = ""; var n = new Uint8Array(e); var r = n.byteLength; for (var i = 0; i < r; i++) { t += String.fromCharCode(n[i]) } return window.btoa(t) }
       let glyphs = { chars: [] };
-      window.onload = () => {
-        const canvas = document.getElementById('canvas');
-        paper.setup(canvas);
-        const tool = new paper.Tool();
-        tool.activate();
-        paper.install(window)
+      //window.onload = () => {
+        socket.on('READY', () => {
+          $('#container').css('visibility', 'visible');
+          const canvas = document.getElementById('canvas');
+          paper.setup(canvas);
+          const tool = new paper.Tool();
+          tool.activate();
+          paper.install(window)
 
-        let bg = new Rectangle(new Point(0, 0), new Point(1366, 200))
-        bg = new Path.Rectangle(bg);
-        bg.fillColor = 'white';
+          let bg = new Rectangle(new Point(0, 0), new Point(1366, 200))
+          bg = new Path.Rectangle(bg);
+          bg.fillColor = 'white';
 
-        let border = new Rectangle(new Point(0, 0), new Point(1366, 200))
-        border = new Path.Rectangle(border);
-        border.strokeColor = 'red';
+          let border = new Rectangle(new Point(0, 0), new Point(1366, 200))
+          border = new Path.Rectangle(border);
+          border.strokeColor = 'red';
 
-        let rectangle;
-        let rectangleCaps;
-        let path1;
-        let path2;
+          let rectangle;
+          let rectangleCaps;
+          let path1;
+          let path2;
 
-        let chars = 'abcdefghijklmnopqrstuvwxyz';
-        let charsCaps = chars.toUpperCase();
+          let chars = 'abcdefghijklmnopqrstuvwxyz';
+          let charsCaps = chars.toUpperCase();
 
-        for (let i = 0; i < chars.length; i++) {
-          glyphs[chars[i]] = { strokes: [] };
-          glyphs[charsCaps[i]] = { strokes: [] };
-          var pointTextLocation = new paper.Point(20 + (i * 50), 25);
-          var myText = new paper.PointText(pointTextLocation);
-          myText.fillColor = 'red';
-          myText.fontSize = 25;
-          myText.content = chars[i];
+          for (let i = 0; i < chars.length; i++) {
+            glyphs[chars[i]] = { strokes: [] };
+            glyphs[charsCaps[i]] = { strokes: [] };
+            var pointTextLocation = new paper.Point(20 + (i * 50), 25);
+            var myText = new paper.PointText(pointTextLocation);
+            myText.fillColor = 'red';
+            myText.fontSize = 25;
+            myText.content = chars[i];
 
-          var pointTextLocation2 = new paper.Point(20 + (i * 50), 135);
-          var myText2 = new paper.PointText(pointTextLocation2);
-          myText2.fillColor = 'red';
-          myText2.fontSize = 25;
-          myText2.content = charsCaps[i];
+            var pointTextLocation2 = new paper.Point(20 + (i * 50), 135);
+            var myText2 = new paper.PointText(pointTextLocation2);
+            myText2.fillColor = 'red';
+            myText2.fontSize = 25;
+            myText2.content = charsCaps[i];
 
-          rectangle = new Rectangle(new Point(i * 50, 50), new Point((i * 50) + 50, 100));
+            rectangle = new Rectangle(new Point(i * 50, 50), new Point((i * 50) + 50, 100));
 
-          rectangleCaps = new Rectangle(new Point(i * 50, 150), new Point((i * 50) + 50, 200));
+            rectangleCaps = new Rectangle(new Point(i * 50, 150), new Point((i * 50) + 50, 200));
 
-          path1 = new Path.Rectangle(rectangle);
-          path1.strokeColor = '#e9e9ff';
+            path1 = new Path.Rectangle(rectangle);
+            path1.strokeColor = '#e9e9ff';
 
-          path2 = new Path.Rectangle(rectangleCaps);
-          path2.strokeColor = '#e9e9ff';
-        }
-
-        let myPath;
-        let currentChar;
-        //document.addEventListener('contextmenu', event => event.preventDefault());
-        tool.onMouseDown = (event) => {
-          if (Math.round((event.point.x - 25) / 50) > 26) {
-            return;
+            path2 = new Path.Rectangle(rectangleCaps);
+            path2.strokeColor = '#e9e9ff';
           }
-          myPath = new Path();
-          myPath.strokeColor = 'black';
-          switch (true) {
-            case (event.point.y < 150):
-              currentChar = chars[Math.round((event.point.x - 25) / 50)];
-              break;
-            default:
-              currentChar = charsCaps[Math.round((event.point.x - 25) / 50)];
-              break;
-              break;
-          }
-        }
-        tool.onMouseDrag = (event) => {
-          myPath.add(event.point);
-        }
-        tool.onMouseUp = (event) => {
-          if (myPath.bounds.width < 5 && myPath.bounds.height < 5) {
-            myPath.remove();
-            let myCircle = new Path.Circle({
-              center: event.point,
-              radius: 1
-            });
-            myCircle.fillColor = 'black';
-            glyphs[currentChar].strokes.push([{ x: event.point.x, y: event.point.y }]);
-          } else {
-            glyphs[currentChar].strokes.push([]);
-            for (let i = 0; i < myPath.segments.length; i++) {
-              let arr = glyphs[currentChar].strokes;
-              arr[arr.length - 1].push({ x: myPath.segments[i].point.x, y: myPath.segments[i].point.y });
+
+          let myPath;
+          let currentChar;
+          //document.addEventListener('contextmenu', event => event.preventDefault());
+          tool.onMouseDown = (event) => {
+            if (Math.round((event.point.x - 25) / 50) > 26) {
+              return;
+            }
+            myPath = new Path();
+            myPath.strokeColor = 'black';
+            switch (true) {
+              case (event.point.y < 150):
+                currentChar = chars[Math.round((event.point.x - 25) / 50)];
+                break;
+              default:
+                currentChar = charsCaps[Math.round((event.point.x - 25) / 50)];
+                break;
+                break;
             }
           }
-          if (!glyphs.chars.includes(currentChar)) {
-            glyphs.chars.push(currentChar);
+          tool.onMouseDrag = (event) => {
+            myPath.add(event.point);
           }
-          socket.emit('glyphs', glyphs);
-          myPath.simplify(10);
+          tool.onMouseUp = (event) => {
+            if (myPath.bounds.width < 5 && myPath.bounds.height < 5) {
+              myPath.remove();
+              let myCircle = new Path.Circle({
+                center: event.point,
+                radius: 1
+              });
+              myCircle.fillColor = 'black';
+              glyphs[currentChar].strokes.push([{ x: event.point.x, y: event.point.y }]);
+            } else {
+              glyphs[currentChar].strokes.push([]);
+              for (let i = 0; i < myPath.segments.length; i++) {
+                let arr = glyphs[currentChar].strokes;
+                arr[arr.length - 1].push({ x: myPath.segments[i].point.x, y: myPath.segments[i].point.y });
+              }
+            }
+            if (!glyphs.chars.includes(currentChar)) {
+              glyphs.chars.push(currentChar);
+            }
+            socket.emit('glyphs', glyphs);
+            myPath.simplify(10);
+          }
+
+          $('#input').keypress((e) => {
+            if (e.key == 'Enter') {
+              socket.emit('input', $('#input').val());
+            }
+          });
+
+          socket.on('svg', (data) => {
+            $('#svg').html(data);
+          });
+
+          socket.on('png', async (png) => {
+            document.getElementById('img').src = await 'data:image/jpeg;base64,' + b64(png.buffer)
+          });
         }
-      }
-      const socket = io.connect('https://mydogdidmyhomework.herokuapp.com');
-
-      $('#input').keypress((e) => {
-        if (e.key == 'Enter') {
-          socket.emit('input', $('#input').val());
-        }
-      });
-
-      socket.on('svg', (data) => {
-        $('#svg').html(data);
-      });
-
-      socket.on('png', async (png) => {
-        document.getElementById('img').src = await 'data:image/jpeg;base64,' + b64(png.buffer)
-      });
+        )
+      //};
     </script>
   </body>
   <style>
-    body, canvas, svg {
+    body,
+    canvas,
+    svg {
       margin: 0;
       padding: 0;
       overflow-y: hidden;
+    }
+
+    #container {
+      visibility: hidden;
     }
 
     svg {
