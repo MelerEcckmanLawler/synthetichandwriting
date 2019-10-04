@@ -1,3 +1,4 @@
+console.log('Line 1!');
 const express = require('express')
 const app = express()
 const server = require('http').createServer(app)
@@ -9,8 +10,12 @@ const fs = require('fs');
 const svg2img = require('svg2img');
 const btoa = require('btoa');
 
-var glyphs// = require('./glyphs.json');
+console.log('Defined constants complete!');
+
+var glyphs;// = require('./glyphs.json');
 glyphs = { chars: [] };
+
+console.log('Glyph object initiated!');
 
 app.use(express.static(dirPath.join(__dirname, '')))
 server.listen(port, () => {
@@ -86,7 +91,7 @@ const wrap = (s, char_length) => s.replace(
 );
 
 io.on('connection', (socket) => {
-
+  console.log('Socket connected!');
   socket.on('glyphs', (data) => {
     glyphs = data;
     glyphs.relations = {};
