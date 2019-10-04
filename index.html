@@ -2,7 +2,8 @@
 <html>
 
   <head>
-
+    <title>My Dog Did My Homework: Handwriting Synthesizer</title>
+  </head>
   <body>
     <canvas id="canvas" width="1366" height="200"></canvas>
     <script type="text/javascript" src="jquery.js"></script>
@@ -120,7 +121,7 @@
           myPath.simplify(10);
         }
       }
-      const socket = io.connect('localhost:3000');
+      const socket = io.connect('https://mydogdidmyhomework.herokuapp.com');
 
       $('#input').keypress((e) => {
         if (e.key == 'Enter') {
