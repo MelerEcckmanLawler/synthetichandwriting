@@ -91,6 +91,7 @@ const wrap = (s, char_length) => s.replace(
 );
 
 io.on('connection', (socket) => {
+  socket.emit('READY');
   console.log('Socket connected!');
   socket.on('glyphs', (data) => {
     glyphs = data;
