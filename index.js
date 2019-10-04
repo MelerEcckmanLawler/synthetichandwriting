@@ -5,9 +5,12 @@ const dirPath = require('path')
 const io = require('socket.io')(server)
 const port = 3000;
 const paper = require('paper-jsdom-canvas');
+const fs = require('fs');
+const svg2img = require('svg2img');
+const btoa = require('btoa');
 
 var glyphs// = require('./glyphs.json');
-glyphs = {chars: []};
+glyphs = { chars: [] };
 
 app.use(express.static(dirPath.join(__dirname, '')))
 server.listen(port, () => {
@@ -24,7 +27,6 @@ function vAlign(letter) {
     case 'p':
     case 'q':
     case 'y':
-      console.log(letter + 'hangs')
       return 'hangs';
       break;
     case 'b':
@@ -34,11 +36,9 @@ function vAlign(letter) {
     case 'k':
     case 'l':
     case 't':
-        console.log(letter + 'is tall')
       return 'tall';
       break;
     default:
-        console.log(letter + 'sits')
       return 'sits';
       break;
   }
@@ -252,8 +252,14 @@ io.on('connection', (socket) => {
         }
       }
 
-      let svg = project.exportSVG({ asString: true });
-      socket.emit('svg', svg);
+      //let svg = project.exportSVG({ asString: true });
+      //socket.emit('svg', svg);
+      //1. convert from svg string
+      svg2img(svg, function (error, buffer) {
+        //returns a Buffer
+        //fs.writeFileSync('TEST.png', buffer);
+        socket.emit('png', { image: true, buffer: buffer });
+      });
     }
   });
 });

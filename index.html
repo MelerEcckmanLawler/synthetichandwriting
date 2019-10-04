@@ -19,10 +19,12 @@
         <input id='input' type="text" class="form-control" placeholder="Draw the letters you need in the boxes above, type here, then press Enter!" aria-label="Username" aria-describedby="basic-addon1">
       </div>
 
+      <img id='img'/>
       <div id='svg'></div>
   
     <script type="text/javascript">
       'use strict';
+      function b64(e) { var t = ""; var n = new Uint8Array(e); var r = n.byteLength; for (var i = 0; i < r; i++) { t += String.fromCharCode(n[i]) } return window.btoa(t) }
       let glyphs = { chars: [] };
       window.onload = () => {
         const canvas = document.getElementById('canvas');
@@ -75,6 +77,7 @@
 
         let myPath;
         let currentChar;
+        //document.addEventListener('contextmenu', event => event.preventDefault());
         tool.onMouseDown = (event) => {
           if (Math.round((event.point.x - 25) / 50) > 26) {
             return;
@@ -115,7 +118,6 @@
           }
           socket.emit('glyphs', glyphs);
           myPath.simplify(10);
-          console.log(glyphs);
         }
       }
       const socket = io.connect('localhost:3000');
@@ -129,6 +131,10 @@
       socket.on('svg', (data) => {
         $('#svg').html(data);
       });
+
+      socket.on('png', async (png) => {
+        document.getElementById('img').src = await 'data:image/jpeg;base64,' + b64(png.buffer)
+      });
     </script>
   </body>
   <style>
@@ -136,6 +142,10 @@
       margin: 0;
       padding: 0;
       overflow-y: hidden;
+    }
+
+    svg {
+      margin-top: 10px;
     }
   </style>
 
