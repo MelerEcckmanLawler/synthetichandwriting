@@ -6,15 +6,15 @@ const io = require('socket.io')(server)
 const port = 3000;
 const paper = require('paper-jsdom-canvas');
 
-var glyphs = require('./glyphs.json');
-glyphs.chars = [];
-let alphabet = 'abcdefghijklmnopqrstuvwxyz';
-glyphs.chars.push(...alphabet);
+var glyphs// = require('./glyphs.json');
+glyphs = {chars: []};
 
 app.use(express.static(dirPath.join(__dirname, '')))
 server.listen(port, () => {
   console.log(`Server running on port ${port}.`)
 })
+
+let caps = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 var randomRange = (r) => Math.floor(Math.random() * (r + 1)) - (r / 2);
 function vAlign(letter) {
@@ -24,6 +24,7 @@ function vAlign(letter) {
     case 'p':
     case 'q':
     case 'y':
+      console.log(letter + 'hangs')
       return 'hangs';
       break;
     case 'b':
@@ -33,9 +34,11 @@ function vAlign(letter) {
     case 'k':
     case 'l':
     case 't':
+        console.log(letter + 'is tall')
       return 'tall';
       break;
     default:
+        console.log(letter + 'sits')
       return 'sits';
       break;
   }
@@ -100,7 +103,11 @@ io.on('connection', (socket) => {
           paths.push(path);
           glyphs.relations[glyphs.chars[i]][j] = {};
           glyphs.relations[glyphs.chars[i]][j].x = paths[j].position.x - paths[0].position.x;
-          glyphs.relations[glyphs.chars[i]][j].y = paths[j].position.y - paths[0].position.y;
+          if (paths[j].position.y < paths[0].position.y) {
+            glyphs.relations[glyphs.chars[i]][j].y = paths[j].position.y - paths[0].position.y;
+          } else {
+            glyphs.relations[glyphs.chars[i]][j].y = paths[j].position.y - paths[0].position.y;
+          }
           glyphs.relations[glyphs.chars[i]][j].width = paths[j].bounds.width;
           glyphs.relations[glyphs.chars[i]][j].height = paths[j].bounds.height;
         }
@@ -121,14 +128,25 @@ io.on('connection', (socket) => {
 
       function drawRow(text, y) {
         let rowWidth = 0;
+        let letterArr = [];
         for (let i = 0; i < text.length; i++) {
           let strokePile = drawGlyph(text[i], rowWidth, y);
           if (strokePile === null) {
             rowWidth += 50;
           } else {
+            if (text[i] == 'T') {
+              strokePile.position.y -= strokePile.bounds.height / 2;
+            }
             let spacing;
             switch (text[i]) {
               case 'k':
+              case 'R':
+              case 'B':
+              case 'H':
+              case 'J':
+              case 'K':
+              case 'X':
+              case 'x':
                 spacing = strokePile.bounds.width;
                 break;
               default:
@@ -137,9 +155,32 @@ io.on('connection', (socket) => {
             }
             rowWidth += spacing + 5;
             strokePile.position.x = rowWidth - (spacing / 2);
+            letterArr.push(strokePile);
             //drawBoundingBox(strokePile);
           }
         }
+        for (let i = 0; i < letterArr.length; i++) {
+          if (Math.random() > .9) {
+            if (i < (letterArr.length - 2)) {
+              //ligatePair(letterArr[i].children[0], letterArr[i + 1].children[0]);
+              i++;
+            }
+          }
+        }
+      }
+
+      function ligatePair(path1, path2) {
+        let path = new Path();
+        for (let i = 0; i < path1.segments.length; i++) {
+          path.add(path1.segments[i].point.x, path1.segments[i].point.y);
+        }
+        for (let i = 0; i < path2.segments.length; i++) {
+          path.add(path2.segments[i].point.x, path2.segments[i].point.y);
+        }
+        path1.remove();
+        path2.remove();
+        path.strokeColor = 'red';
+        path.simplify(5);
       }
 
       function drawGlyph(glyph, x, y) {
@@ -158,7 +199,7 @@ io.on('connection', (socket) => {
         if (vAlign(letter) !== 'hangs') {
           sitPath(strokePile);
         }
-        
+
         for (let i = 0; i < strokePile.children.length; i++) {
           if (strokePile.children[i].isDot) {
             continue;
@@ -167,12 +208,13 @@ io.on('connection', (socket) => {
           let widthFactor = glyphs.relations[letter][i].width / strokePile.children[i].bounds.width;
           let heightFactor = glyphs.relations[letter][i].height / strokePile.children[i].bounds.height;
 
-          widthFactor += Math.random() * .1;
-          heightFactor += Math.random() * .1;
+          widthFactor += Math.random() * .2;
+          heightFactor += Math.random() * .2;
 
           strokePile.children[i].bounds.width *= widthFactor;
           strokePile.children[i].bounds.height *= heightFactor;
           strokePile.children[i].position.y -= (diff);
+
         }
         return strokePile;
       }
