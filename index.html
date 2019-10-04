@@ -1,22 +1,89 @@
-
-
 <!DOCTYPE html>
 <html>
+
   <head>
+
   <body>
-      <input id='input' type='text'/>
-      <img id='img'></img>
+    <input id='input' type='text' size=100 />
+    <canvas id="canvas" width="1366" height="200"></canvas>
+    <div id='svg'></div>
     <script type="text/javascript" src="jquery.js"></script>
     <script type="text/javascript" src="socket.io.js"></script>
+    <script type="text/javascript" src="paper.js"></script>
     <script type="text/javascript">
       'use strict';
+      let glyphs = {chars: []};
+      window.onload = () => {
+        const canvas = document.getElementById('canvas');
+        paper.setup(canvas);
+        const tool = new paper.Tool();
+        tool.activate();
+        paper.install(window)
+
+        let rectangle = new Rectangle(new Point(0, 0), new Point(1366, 200));
+        let path = new Path.Rectangle(rectangle);
+        path.strokeColor = 'red';
+
+        let chars = 'abcdefghijklmnopqrstuvwxyz';
+        for (let i = 0; i < chars.length; i++) {
+          glyphs[chars[i]] = { strokes: [] };
+          var pointTextLocation = new paper.Point(25 + (i * 50), 25);
+          var myText = new paper.PointText(pointTextLocation);
+          myText.fillColor = 'red';
+          myText.fontSize = 25;
+          myText.content = chars[i];
+
+          rectangle = new Rectangle(new Point(i * 50, 50), new Point((i * 50) + 50, 100));
+          path = new Path.Rectangle(rectangle);
+          path.strokeColor = '#e9e9ff';
+        }
+
+        let myPath;
+        let currentChar;
+        tool.onMouseDown = (event) => {
+          myPath = new Path();
+          myPath.strokeColor = 'black';
+          currentChar = chars[Math.round((event.point.x - 25)/50)];
+        }
+        tool.onMouseDrag = (event) => {
+          myPath.add(event.point);
+        }
+        tool.onMouseUp = (event) => {
+          //let currentChar = chars[Math.round((event.point.x - 25)/50)];
+          if (myPath.bounds.width < 5 && myPath.bounds.height < 5) {
+            myPath.remove();
+            let myCircle = new Path.Circle({
+              center: event.point,
+              radius: 1
+            });
+            myCircle.fillColor = 'black';
+            glyphs[currentChar].strokes.push([{ x: event.point.x, y: event.point.y} ]);
+          } else {
+            glyphs[currentChar].strokes.push([]);
+            for (let i = 0; i < myPath.segments.length; i++) {
+              let arr = glyphs[currentChar].strokes;
+              arr[arr.length - 1].push({x: myPath.segments[i].point.x, y: myPath.segments[i].point.y});
+            }
+          }
+          if (!glyphs.chars.includes(currentChar)) {
+            glyphs.chars.push(currentChar);
+          }
+          socket.emit('glyphs', glyphs);
+          console.log(glyphs);
+          myPath.simplify(10);
+        }
+      }
       const socket = io.connect('localhost:3000');
 
-      $('#input').keypress((e)=>{
+      $('#input').keypress((e) => {
         if (e.key == 'Enter') {
           socket.emit('input', $('#input').val());
         }
-      }); 
+      });
+
+      socket.on('svg', (data) => {
+        $('#svg').html(data);
+      });
     </script>
   </body>
   <style>
@@ -27,4 +94,5 @@
       overflow-y: hidden;
     }
   </style>
+
 </html>
