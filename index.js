@@ -257,7 +257,7 @@ io.on('connection', (socket) => {
         }
       }
 
-      //let svg = project.exportSVG({ asString: true });
+      let svg = project.exportSVG({ asString: true });
       //socket.emit('svg', svg);
       //1. convert from svg string
       svg2img(svg, function (error, buffer) {
