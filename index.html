@@ -49,7 +49,6 @@
           myPath.add(event.point);
         }
         tool.onMouseUp = (event) => {
-          //let currentChar = chars[Math.round((event.point.x - 25)/50)];
           if (myPath.bounds.width < 5 && myPath.bounds.height < 5) {
             myPath.remove();
             let myCircle = new Path.Circle({
@@ -69,7 +68,6 @@
             glyphs.chars.push(currentChar);
           }
           socket.emit('glyphs', glyphs);
-          console.log(glyphs);
           myPath.simplify(10);
         }
       }

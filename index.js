@@ -101,6 +101,8 @@ io.on('connection', (socket) => {
           glyphs.relations[glyphs.chars[i]][j] = {};
           glyphs.relations[glyphs.chars[i]][j].x = paths[j].position.x - paths[0].position.x;
           glyphs.relations[glyphs.chars[i]][j].y = paths[j].position.y - paths[0].position.y;
+          glyphs.relations[glyphs.chars[i]][j].width = paths[j].bounds.width;
+          glyphs.relations[glyphs.chars[i]][j].height = paths[j].bounds.height;
         }
       }
     }
@@ -124,9 +126,18 @@ io.on('connection', (socket) => {
           if (strokePile === null) {
             rowWidth += 50;
           } else {
-            let space = strokePile.children[0].bounds.width;
-            rowWidth += space + 5;
-            strokePile.position.x = rowWidth - (space / 2);
+            let spacing;
+            switch (text[i]) {
+              case 'k':
+                spacing = strokePile.bounds.width;
+                break;
+              default:
+                spacing = strokePile.children[0].bounds.width;
+                break;
+            }
+            rowWidth += spacing + 5;
+            strokePile.position.x = rowWidth - (spacing / 2);
+            //drawBoundingBox(strokePile);
           }
         }
       }
@@ -144,8 +155,24 @@ io.on('connection', (socket) => {
         let strokePile = new CompoundPath({ children: strokes });
         strokePile.strokeColor = 'black';
         strokePile.strokeWidth = 1;
-        if (vAlign(letter) != 'hangs') {
+        if (vAlign(letter) !== 'hangs') {
           sitPath(strokePile);
+        }
+        
+        for (let i = 0; i < strokePile.children.length; i++) {
+          if (strokePile.children[i].isDot) {
+            continue;
+          }
+          let diff = glyphs.relations[letter][i].height - strokePile.children[i].bounds.height;
+          let widthFactor = glyphs.relations[letter][i].width / strokePile.children[i].bounds.width;
+          let heightFactor = glyphs.relations[letter][i].height / strokePile.children[i].bounds.height;
+
+          widthFactor += Math.random() * .1;
+          heightFactor += Math.random() * .1;
+
+          strokePile.children[i].bounds.width *= widthFactor;
+          strokePile.children[i].bounds.height *= heightFactor;
+          strokePile.children[i].position.y -= (diff);
         }
         return strokePile;
       }
@@ -162,8 +189,12 @@ io.on('connection', (socket) => {
       function drawStroke(stroke, x, y, letter, count) {
         let width;
         if (stroke.length == 1) {
-          let circle = new Path.Circle(new Point(x, y), 2);
-          circle.fillColor = 'red';
+          let circle = new Path.Rectangle({ x: x, y: y }, { x: x + 1, y: y + 1 });
+          circle.fillColor = 'black';
+          circle.strokeColor = 'black';
+          circle.position.x += glyphs.relations[letter][count].x;
+          circle.position.y += glyphs.relations[letter][count].y;
+          circle.isDot = true;
           return circle;
         } else {
           path = new Path();
@@ -172,8 +203,9 @@ io.on('connection', (socket) => {
             path.add(stroke[i]);
           }
           randomizePath(path, 1);
-          path.position.x = x;
-          path.position.y = y;
+          path.position.x = x + glyphs.relations[letter][count].x;
+          path.position.y = y + glyphs.relations[letter][count].y;
+
           return path;
         }
       }
